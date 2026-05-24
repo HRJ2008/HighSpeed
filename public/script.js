@@ -18,7 +18,6 @@ const privacyBtn = document.getElementById("privacyBtn");
 const privacyCard = document.getElementById("privacyCard");
 const themeBtn = document.getElementById("themeBtn");
 const sizeOptions = document.querySelectorAll(".size-option");
-const serverNote = document.getElementById("serverNote");
 
 const SPEED_LIMIT_MBPS = 1000;
 const PING_SAMPLES = 6;
@@ -38,7 +37,7 @@ const THEMES = [
 let timer;
 let isRunning = false;
 let currentThemeIndex = -1;
-let selectedSizeMb = 25;
+let selectedSizeMb = 10;
 let displayedGaugeValue = 0;
 
 function isLocalServer() {
@@ -48,16 +47,6 @@ function isLocalServer() {
 function getApiUrl(path) {
   const baseUrl = isLocalServer() ? "" : REMOTE_API_BASE_URL;
   return `${baseUrl}${path}`;
-}
-
-function setServerNote() {
-  if (isLocalServer()) {
-    serverNote.textContent =
-      "Local test: this measures browser to this laptop. Cloudflare uses the Render backend for real network testing.";
-    return;
-  }
-
-  serverNote.textContent = "Testing speed between this device and the Render backend server.";
 }
 
 function setTheme(index) {
@@ -336,6 +325,5 @@ document.addEventListener("click", (event) => {
 
 window.addEventListener("load", () => {
   setTheme(Math.floor(Math.random() * THEMES.length));
-  setServerNote();
   resetTest();
 });
