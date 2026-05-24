@@ -22,7 +22,7 @@ const sizeOptions = document.querySelectorAll(".size-option");
 const SPEED_LIMIT_MBPS = 1000;
 const PING_SAMPLES = 6;
 const REMOTE_API_BASE_URL = "https://highspeed-8hm4.onrender.com";
-const GAUGE_ANIMATION_MS = 900;
+const LIVE_UPDATE_MS = 140;
 const THEMES = [
   "https://i.pinimg.com/originals/ec/b9/2d/ecb92d18c7855c986a5571c1b6f7cad2.jpg",
   "https://www.pixelstalk.net/wp-content/uploads/images5/4K-Ultra-Mountain-Wallpapers-For-PC-scaled.jpg",
@@ -67,23 +67,12 @@ function setGauge(value) {
   displayedGaugeValue = value;
 }
 
-function animateGaugeTo(targetValue) {
-  clearInterval(timer);
-  const startValue = displayedGaugeValue;
-  const startedAt = performance.now();
+function updateLiveSpeed(value, outputElement) {
+  const formatted = formatMbps(value);
 
-  timer = setInterval(() => {
-    const progress = Math.min((performance.now() - startedAt) / GAUGE_ANIMATION_MS, 1);
-    const easedProgress = 1 - Math.pow(1 - progress, 3);
-    const nextValue = startValue + (targetValue - startValue) * easedProgress;
-
-    setGauge(nextValue);
-
-    if (progress >= 1) {
-      clearInterval(timer);
-      setGauge(targetValue);
-    }
-  }, 16);
+  speedNumber.textContent = formatted;
+  outputElement.textContent = formatted;
+  setGauge(value);
 }
 
 function resetTest() {
@@ -168,6 +157,8 @@ async function measurePing() {
 
 async function measureDownload(sizeMb) {
   const startedAt = performance.now();
+  let receivedBytes = 0;
+  let lastUpdateAt = startedAt;
   const response = await fetch(getApiUrl(`/api/download?size=${sizeMb}&cacheBust=${Date.now()}`), {
     cache: "no-store"
   });
@@ -176,14 +167,38 @@ async function measureDownload(sizeMb) {
     throw new Error("Download request failed");
   }
 
-  const data = await response.arrayBuffer();
-  const mbps = calculateMbps(data.byteLength, performance.now() - startedAt);
+  if (!response.body) {
+    const data = await response.arrayBuffer();
+    const fallbackMbps = calculateMbps(data.byteLength, performance.now() - startedAt);
+    updateLiveSpeed(fallbackMbps, download);
+    resultDownload.textContent = `${formatMbps(fallbackMbps)} Mbps`;
+    return fallbackMbps;
+  }
+
+  const reader = response.body.getReader();
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    receivedBytes += value.byteLength;
+
+    if (performance.now() - lastUpdateAt >= LIVE_UPDATE_MS) {
+      updateLiveSpeed(calculateMbps(receivedBytes, performance.now() - startedAt), download);
+      lastUpdateAt = performance.now();
+    }
+  }
+
+  const mbps = calculateMbps(receivedBytes, performance.now() - startedAt);
   const formatted = formatMbps(mbps);
 
   speedNumber.textContent = formatted;
   download.textContent = formatted;
   resultDownload.textContent = `${formatted} Mbps`;
-  animateGaugeTo(mbps);
+  setGauge(mbps);
 
   return mbps;
 }
@@ -192,13 +207,27 @@ async function measureUpload(sizeMb) {
   const bytes = sizeMb * 1024 * 1024;
   const data = new Uint8Array(bytes);
   const startedAt = performance.now();
-  const response = await fetch(getApiUrl(`/api/upload?cacheBust=${Date.now()}`), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/octet-stream"
-    },
-    body: data
-  });
+  const displayUploadEstimate = setInterval(() => {
+    const elapsed = performance.now() - startedAt;
+    const progress = Math.min(elapsed / 5000, 0.95);
+    const estimatedBytes = bytes * progress;
+
+    updateLiveSpeed(calculateMbps(estimatedBytes, elapsed), upload);
+  }, LIVE_UPDATE_MS);
+
+  let response;
+
+  try {
+    response = await fetch(getApiUrl(`/api/upload?cacheBust=${Date.now()}`), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream"
+      },
+      body: data
+    });
+  } finally {
+    clearInterval(displayUploadEstimate);
+  }
 
   if (!response.ok) {
     throw new Error("Upload request failed");
@@ -212,7 +241,7 @@ async function measureUpload(sizeMb) {
   speedNumber.textContent = formatted;
   upload.textContent = formatted;
   resultUpload.textContent = `${formatted} Mbps`;
-  animateGaugeTo(mbps);
+  setGauge(mbps);
 
   return mbps;
 }
