@@ -23,6 +23,7 @@ const SPEED_LIMIT_MBPS = 1000;
 const PING_SAMPLES = 6;
 const REMOTE_API_BASE_URL = "https://highspeed-8hm4.onrender.com";
 const LIVE_UPDATE_MS = 140;
+const UPLOAD_ESTIMATE_SECONDS = 5;
 const THEMES = [
   "https://i.pinimg.com/originals/ec/b9/2d/ecb92d18c7855c986a5571c1b6f7cad2.jpg",
   "https://www.pixelstalk.net/wp-content/uploads/images5/4K-Ultra-Mountain-Wallpapers-For-PC-scaled.jpg",
@@ -75,6 +76,10 @@ function updateLiveSpeed(value, outputElement) {
   setGauge(value);
 }
 
+function setStatus(message) {
+  testStatus.textContent = message;
+}
+
 function resetTest() {
   clearInterval(timer);
   isRunning = false;
@@ -85,7 +90,7 @@ function resetTest() {
   resultUpload.textContent = "-- Mbps";
   ping.textContent = "-- ms";
   jitter.textContent = "-- ms";
-  testStatus.textContent = "Ready to test";
+  setStatus("Ready to test");
   startBtn.textContent = "Run speed test";
   startBtn.classList.remove("is-running");
   startBtn.hidden = false;
@@ -104,10 +109,12 @@ function setRunningState(isTesting) {
   if (isTesting) {
     startBtn.textContent = "Running...";
     startBtn.classList.add("is-running");
+    speedCard.classList.add("is-testing");
     return;
   }
 
   startBtn.classList.remove("is-running");
+  speedCard.classList.remove("is-testing");
 }
 
 function formatMbps(value) {
@@ -209,10 +216,11 @@ async function measureUpload(sizeMb) {
   const startedAt = performance.now();
   const displayUploadEstimate = setInterval(() => {
     const elapsed = performance.now() - startedAt;
-    const progress = Math.min(elapsed / 5000, 0.95);
+    const progress = Math.min(elapsed / (UPLOAD_ESTIMATE_SECONDS * 1000), 0.95);
     const estimatedBytes = bytes * progress;
+    const estimateWindow = Math.max(elapsed, 1);
 
-    updateLiveSpeed(calculateMbps(estimatedBytes, elapsed), upload);
+    updateLiveSpeed(calculateMbps(estimatedBytes, estimateWindow), upload);
   }, LIVE_UPDATE_MS);
 
   let response;
@@ -247,7 +255,7 @@ async function measureUpload(sizeMb) {
 }
 
 function setFailureState() {
-  testStatus.textContent = "Test failed. Try again.";
+  setStatus("Test failed. Try again.");
   startBtn.textContent = "Run speed test";
   setRunningState(false);
 }
@@ -271,17 +279,17 @@ async function runSpeedTest() {
   setGauge(0);
 
   try {
-    testStatus.textContent = "Testing ping...";
+    setStatus("Testing ping...");
     await measurePing();
 
-    testStatus.textContent = "Testing download...";
+    setStatus("Testing download...");
     await measureDownload(selectedSizeMb);
 
-    testStatus.textContent = "Testing upload...";
+    setStatus("Testing upload...");
     setGauge(0);
     await measureUpload(selectedSizeMb);
 
-    testStatus.textContent = "Test complete";
+    setStatus("Test complete");
     startBtn.textContent = "Test again";
     setRunningState(false);
     speedCard.classList.add("is-complete");
