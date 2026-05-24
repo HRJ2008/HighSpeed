@@ -23,6 +23,7 @@ const serverNote = document.getElementById("serverNote");
 const SPEED_LIMIT_MBPS = 1000;
 const PING_SAMPLES = 6;
 const REMOTE_API_BASE_URL = "https://highspeed-8hm4.onrender.com";
+const GAUGE_ANIMATION_MS = 900;
 const THEMES = [
   "https://i.pinimg.com/originals/ec/b9/2d/ecb92d18c7855c986a5571c1b6f7cad2.jpg",
   "https://www.pixelstalk.net/wp-content/uploads/images5/4K-Ultra-Mountain-Wallpapers-For-PC-scaled.jpg",
@@ -38,6 +39,7 @@ let timer;
 let isRunning = false;
 let currentThemeIndex = -1;
 let selectedSizeMb = 25;
+let displayedGaugeValue = 0;
 
 function isLocalServer() {
   return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
@@ -63,11 +65,42 @@ function setTheme(index) {
   appShell.style.setProperty("--bg-image", `url("${THEMES[currentThemeIndex]}")`);
 }
 
+function getGaugePercent(value) {
+  const clampedValue = Math.max(0, Math.min(value, SPEED_LIMIT_MBPS));
+
+  if (clampedValue <= 0) {
+    return 0;
+  }
+
+  // Speedometer-style mapping: low real speeds still move the arc visibly.
+  return Math.log10(clampedValue + 1) / Math.log10(SPEED_LIMIT_MBPS + 1);
+}
+
 function setGauge(value) {
-  const percent = Math.max(0, Math.min(value, SPEED_LIMIT_MBPS)) / SPEED_LIMIT_MBPS;
+  const percent = getGaugePercent(value);
 
   gaugeProgress.style.strokeDashoffset = 100 - percent * 100;
   gaugeGlow.style.strokeDashoffset = 100 - percent * 100;
+  displayedGaugeValue = value;
+}
+
+function animateGaugeTo(targetValue) {
+  clearInterval(timer);
+  const startValue = displayedGaugeValue;
+  const startedAt = performance.now();
+
+  timer = setInterval(() => {
+    const progress = Math.min((performance.now() - startedAt) / GAUGE_ANIMATION_MS, 1);
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
+    const nextValue = startValue + (targetValue - startValue) * easedProgress;
+
+    setGauge(nextValue);
+
+    if (progress >= 1) {
+      clearInterval(timer);
+      setGauge(targetValue);
+    }
+  }, 16);
 }
 
 function resetTest() {
@@ -167,7 +200,7 @@ async function measureDownload(sizeMb) {
   speedNumber.textContent = formatted;
   download.textContent = formatted;
   resultDownload.textContent = `${formatted} Mbps`;
-  setGauge(mbps);
+  animateGaugeTo(mbps);
 
   return mbps;
 }
@@ -196,7 +229,7 @@ async function measureUpload(sizeMb) {
   speedNumber.textContent = formatted;
   upload.textContent = formatted;
   resultUpload.textContent = `${formatted} Mbps`;
-  setGauge(mbps);
+  animateGaugeTo(mbps);
 
   return mbps;
 }
