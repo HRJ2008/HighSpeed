@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetPulse Internet Speed Test</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell" id="appShell">
+    <div class="mesh mesh-left" aria-hidden="true"></div>
+    <div class="mesh mesh-right" aria-hidden="true"></div>
+    <div class="sparkles" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div></div>
+      <nav class="top-actions" aria-label="Page controls">
+        <button class="pill-button" type="button">
+          English (US)
+        </button>
+        <div class="options-menu">
+          <button class="pill-button" id="optionsBtn" type="button" aria-expanded="false" aria-controls="optionsPanel">
+            <span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="privacy-text">About</span>
+          </button>
+          <div class="options-panel" id="optionsPanel" hidden>
+            <button type="button" id="privacyBtn">About</button>
+            <button type="button" id="themeBtn">Change theme</button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <aside class="privacy-card" id="privacyCard" aria-label="About information" hidden>
+      <strong>About</strong>
+      <p>I am Harsh Raj Jha, and this project is made by me.</p>
+      <p>Email: harshrajjha2008@gmail.com</p>
+      <p>Phone: +91 8287735448</p>
+    </aside>
+
+    <section class="speed-stage" id="speedStage" aria-label="Internet speed test">
+      <div class="brand">
+        <img class="brand-logo" src="logo.png" alt="High Speed internet speed test logo" />
+      </div>
+
+      <div class="speed-card" id="speedCard">
+        <div class="card-title">
+          <span>Internet speed test</span>
+        </div>
+
+        <div class="gauge-wrap">
+          <svg class="gauge" viewBox="0 0 300 220" aria-hidden="true">
+            <defs>
+              <linearGradient id="gaugeGradient" x1="42" y1="176" x2="258" y2="176" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#6d5dfc" />
+                <stop offset="0.5" stop-color="#8a3ffc" />
+                <stop offset="1" stop-color="#2f73ff" />
+              </linearGradient>
+            </defs>
+            <g class="gauge-svg-labels">
+              <text x="28" y="202">0</text>
+              <text x="18" y="132">100</text>
+              <text x="70" y="66">250</text>
+              <text x="150" y="38">500</text>
+              <text x="230" y="66">750</text>
+              <text x="282" y="132">900</text>
+              <text x="272" y="202">1 Gbps</text>
+            </g>
+            <path class="gauge-track" pathLength="100" d="M 42 176 A 108 108 0 1 1 258 176" />
+            <path class="gauge-glow" pathLength="100" d="M 42 176 A 108 108 0 1 1 258 176" />
+            <path class="gauge-progress" id="gaugeProgress" pathLength="100" d="M 42 176 A 108 108 0 1 1 258 176" />
+          </svg>
+          <div class="gauge-value">
+            <strong id="speedNumber">0.00</strong>
+            <span>Megabits per second</span>
+          </div>
+          <div class="test-status">
+            <span id="testStatus">Testing download...</span>
+          </div>
+        </div>
+
+        <div class="meter-stats">
+          <div>
+            <strong><span id="download">0.00</span></strong>
+            <span>Mbps download</span>
+          </div>
+          <div>
+            <strong><span id="upload">--</span></strong>
+            <span>Mbps upload</span>
+          </div>
+        </div>
+
+        <div class="result-message" id="resultMessage">
+          <p>Download: <strong id="resultDownload">-- Mbps</strong></p>
+          <p>Upload: <strong id="resultUpload">-- Mbps</strong></p>
+          <p>Latency: <strong id="ping">-- ms</strong></p>
+          <p>Jitter: <strong id="jitter">-- ms</strong></p>
+          <p>Server: <strong>Delhi</strong></p>
+          <p><strong>Your Internet connection is fast.</strong></p>
+          <p>Your Internet connection should be able to handle multiple devices streaming HD videos at the same time.</p>
+        </div>
+
+        <div class="card-actions">
+          <div class="size-control" aria-label="Download and upload test size">
+            <button class="size-option" type="button" data-size="10">10 MB</button>
+            <button class="size-option is-active" type="button" data-size="25">25 MB</button>
+            <button class="size-option" type="button" data-size="50">50 MB</button>
+            <button class="size-option" type="button" data-size="100">100 MB</button>
+          </div>
+          <button class="refresh-button" id="startBtn" type="button">Run speed test</button>
+        </div>
+        <p class="server-note" id="serverNote"></p>
+      </div>
+    </section>
+
+    <div class="made-by">Made by Harsh</div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
