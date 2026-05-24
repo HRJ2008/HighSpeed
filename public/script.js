@@ -22,6 +22,7 @@ const serverNote = document.getElementById("serverNote");
 
 const SPEED_LIMIT_MBPS = 1000;
 const PING_SAMPLES = 6;
+const REMOTE_API_BASE_URL = "https://highspeed-8hm4.onrender.com";
 const THEMES = [
   "https://i.pinimg.com/originals/ec/b9/2d/ecb92d18c7855c986a5571c1b6f7cad2.jpg",
   "https://www.pixelstalk.net/wp-content/uploads/images5/4K-Ultra-Mountain-Wallpapers-For-PC-scaled.jpg",
@@ -42,14 +43,19 @@ function isLocalServer() {
   return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
 }
 
+function getApiUrl(path) {
+  const baseUrl = isLocalServer() ? "" : REMOTE_API_BASE_URL;
+  return `${baseUrl}${path}`;
+}
+
 function setServerNote() {
   if (isLocalServer()) {
     serverNote.textContent =
-      "Local server test: this measures browser to this laptop, not your real internet. Deploy the backend online for real ISP speed.";
+      "Local test: this measures browser to this laptop. Cloudflare uses the Render backend for real network testing.";
     return;
   }
 
-  serverNote.textContent = "Testing speed between this device and the backend server.";
+  serverNote.textContent = "Testing speed between this device and the Render backend server.";
 }
 
 function setTheme(index) {
@@ -118,7 +124,7 @@ async function measurePing() {
 
   for (let index = 0; index < PING_SAMPLES; index += 1) {
     const startedAt = performance.now();
-    const response = await fetch(`/api/ping?cacheBust=${Date.now()}-${index}`, {
+    const response = await fetch(getApiUrl(`/api/ping?cacheBust=${Date.now()}-${index}`), {
       cache: "no-store"
     });
 
@@ -146,7 +152,7 @@ async function measurePing() {
 
 async function measureDownload(sizeMb) {
   const startedAt = performance.now();
-  const response = await fetch(`/api/download?size=${sizeMb}&cacheBust=${Date.now()}`, {
+  const response = await fetch(getApiUrl(`/api/download?size=${sizeMb}&cacheBust=${Date.now()}`), {
     cache: "no-store"
   });
 
@@ -170,7 +176,7 @@ async function measureUpload(sizeMb) {
   const bytes = sizeMb * 1024 * 1024;
   const data = new Uint8Array(bytes);
   const startedAt = performance.now();
-  const response = await fetch(`/api/upload?cacheBust=${Date.now()}`, {
+  const response = await fetch(getApiUrl(`/api/upload?cacheBust=${Date.now()}`), {
     method: "POST",
     headers: {
       "Content-Type": "application/octet-stream"
