@@ -56,13 +56,7 @@ function setTheme(index) {
 
 function getGaugePercent(value) {
   const clampedValue = Math.max(0, Math.min(value, SPEED_LIMIT_MBPS));
-
-  if (clampedValue <= 0) {
-    return 0;
-  }
-
-  // Speedometer-style mapping: low real speeds still move the arc visibly.
-  return Math.log10(clampedValue + 1) / Math.log10(SPEED_LIMIT_MBPS + 1);
+  return clampedValue / SPEED_LIMIT_MBPS;
 }
 
 function setGauge(value) {
